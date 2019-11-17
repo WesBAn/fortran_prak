@@ -1,7 +1,7 @@
 module assert_func
     private
     interface u_assert
-       module procedure u_assert_integer4, u_assert_integer8 !u_assert_real4, u_assert_real8,  u_assert_logical
+       module procedure u_assert_integer4, u_assert_integer8, u_assert_real4, u_assert_real8,  u_assert_logical
     end interface u_assert
 
     public :: u_assert
@@ -14,6 +14,7 @@ contains
             u_assert_integer4 = .TRUE.
         else 
             print *,'test fallen'
+            print *, statement1, '!=', statement2 
             u_assert_integer4 = .FALSE.
         end if
 
@@ -26,6 +27,7 @@ contains
             u_assert_integer8 = .TRUE.
         else 
             print *,'test fallen'
+            print *, statement1, '!=', statement2 
             u_assert_integer8 = .FALSE.
         end if
     end function u_assert_integer8
@@ -37,6 +39,7 @@ contains
             u_assert_real4 = .TRUE.
         else 
             print *,'test fallen'
+            print *, statement1, '!=', statement2 
             u_assert_real4 = .FALSE.
         end if
     end function u_assert_real4
@@ -48,6 +51,7 @@ contains
             u_assert_real8 = .TRUE.
         else 
             print *,'test fallen'
+            print *, statement1, '!=', statement2 
             u_assert_real8 = .FALSE.
         end if
     end function u_assert_real8
@@ -59,6 +63,7 @@ contains
             u_assert_logical = .TRUE.
         else 
             print *,'test fallen'
+            print *, statement1, '!=', statement2 
             u_assert_logical = .FALSE.
         end if
     end function u_assert_logical

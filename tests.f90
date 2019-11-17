@@ -1,17 +1,41 @@
 module tests
     use assert_func
 
+    private :: get_test_report
+    private :: test_f_zero
     private :: test_f
     private :: test_get_x_from_interval
     private :: test_get_arr_x
     private :: test_p_n
 
-    public :: run_tests
+    public :: run_unit_tests
 
 contains
+    subroutine get_test_report(result, name_of_test)
+        logical result
+        character(30) name_of_test
+
+        if (result) then
+            print *, name_of_test, ' passed'
+        else
+            print *, name_of_test, ' failed'
+        end if 
+    end subroutine get_test_report
+
+    function test_f_zero()
+        logical test_f_zero
+        character(30) ::name_of_test = 'test_f_zero'
+
+        test_f_zero = u_assert(f(1.0), 0.0)
+        call get_test_report(test_f_zero, name_of_test)
+    end function test_f_zero
+
     function test_f()
         logical test_f
+        character(30) ::name_of_test = 'test_f'
+        test_f = u_assert(f(2.0), (exp(2.0)-1)/(exp(2.0)+1) )
 
+        call get_test_report(test_f, name_of_test)
     end function test_f
 
     function test_get_x_from_interval()
@@ -29,7 +53,17 @@ contains
 
     end function test_p_n
 
-    function run_tests()
-
-    end function run_tests
+    function run_unit_tests()
+        logical run_unit_tests
+        if (test_f_zero() &
+                .AND. test_f() &
+                .AND. test_get_x_from_interval() &
+                .AND. test_get_arr_x() &
+                .AND. test_p_n()) then
+            run_unit_tests = .TRUE.
+        else
+            run_unit_tests = .TRUE.
+            print *, 'Unit tests failed'
+        end if
+    end function run_unit_tests
 end module tests
