@@ -60,11 +60,12 @@ contains
         call get_test_report(test_get_arr_x, name_of_test)
     end function test_get_arr_x
 
-   ! function test_p_n()
-   !     logical test_p_n
-   !     character(30) ::name_of_test = 'test_p_n'
+    ! function test_p_n()
+    !     logical test_p_n
+    !     character(30) ::name_of_test = 'test_p_n'
 
-   ! end function test_p_n
+
+    ! end function test_p_n
 
     function run_unit_tests()
         logical run_unit_tests
@@ -73,6 +74,7 @@ contains
                 .AND. test_get_x_from_interval() &
                 .AND. test_get_arr_x()) then
             run_unit_tests = .TRUE.
+            print *, 'Unit tests passed'
         else
             run_unit_tests = .FALSE.
             print *, 'Unit tests failed'

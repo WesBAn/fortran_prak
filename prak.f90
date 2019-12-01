@@ -25,43 +25,119 @@ subroutine get_arr_x(arr_x, c, d, bigN)
     real arr_x(0:bigN)
 
     integer i
-
     do i = 0, bigN
         arr_x(i) = get_x_from_interval(c, d, bigN, i)
     end do
 end subroutine get_arr_x
 
 
-function p_n(n, arr_a, x)
+function get_p_n(n, arr_a, x)
+    use utils
+
     integer n
     real ::arr_a(0:n)
     real x
-    real p_n
-    
-    real curr_x
+    real get_p_n
+    call gorner(arr_a, 0, n, x, get_p_n)
+end function get_p_n
+
+
+function get_bigF(n, arr_a, arr_x, bigN)    
+    integer n
+    integer bigN
+    real arr_a(0:n)
+    real arr_x(0:bigN)
+    real get_bigF
     integer i
 
-    curr_x = 1
-    p_n = 0
-    do i = 0, n
-        p_n = p_n + arr_a(n-i) * curr_x
-        curr_x = curr_x * x
+    get_bigF = 0.0    
+    do i = 0, bigN
+        get_bigF = get_bigF + (f(arr_x(i)) - get_p_n(n, arr_a, arr_x(i)))**2
     end do
-end function p_n
+end function get_bigF
 
 
-! function bigF(n, arr_a, arr_x, bigN)    
-!     integer n
-!     integer ::arr_a(0:n)
+subroutine get_grad_bigF(n, arr_a, arr_x, bigN, arr_grad)
+    integer n
+    integer bigN
+    real arr_a(0:n)
+    real arr_x(0:bigN)
+    real arr_grad(0:n)
     
-!     real, dimension(vect_size)
-!     real ::bigF = 0
+    do i = 0, n
+        arr_grad(i) = 0
+        do j = 0, N
+            arr_grad(i) = arr_grad(i) + 2 * (arr_x(j) ** (n-i)) * ( get_p_n(n, arr_a, arr_x(j)) - f(arr_x(j)) )
+        end do
+    end do
+end subroutine get_grad_bigF
 
-!     integer i
-!     do i = 0, bigN
-!         bigF = bigF + sqr(f(i) )
-!     end do
-! end function bigF
+
+function get_avsqrt_dispersion(n, arr_a, arr_x, bigN)
+    integer n
+    integer bigN
+    real arr_a(0:n)
+    real arr_x(0:bigN)
+    real get_avsqrt_dispersion
+    get_avsqrt_dispersion = sqrt(get_bigF(n, arr_a, arr_x, bigN) / (bigN+1))
+end function get_avsqrt_dispersion
+
+
+function get_sigma_k(n, arr_a_k, arr_a_k_minus1) 
+    integer n
+    real, dimension(0:n) ::arr_a_k, arr_a_k_minus1
+    real get_sigma_k
+
+    sigma_k = 0
+    do i = 0, n
+        get_sigma_k = max(sigma_k, abs((arr_a_k(i) - arr_a_k_minus1(i)) / arr_a_k(i)))
+    end do
+end function get_sigma_k
+
+
+function get_beta_k(n, arr_a_k, arr_a_k_plus1)
+    integer n
+    real, dimension(0:n) ::arr_a_k, arr_a_k_plus1
+    real get_beta_k
+
+    get_beta_k = (norm2(arr_a_k_plus1)**2) / (norm2(arr_a_k)**2) 
+
+end function get_beta_k
+
+
+function get_lambda(n, arr_a_k, arr_v, arr_x, bigN)
+    integer n, size_arr_v
+    integer bigN
+    real, dimension(0:n) ::arr_a_k, arr_v
+    real, dimension(0:bigN) ::arr_x
+    real get_lambda
+    real, dimension(1:3) ::mu
+    real, parameter ::lambdas(1:3) = (/-1.0, 0.0, 1.0/)
+
+    do i = 1, 3
+        mu(i) = get_bigF(n, arr_a_k + lambdas(i) * arr_v, arr_x, bigN)
+    end do
+    get_lambda = ( mu(1) - mu(3) ) / ( 2*(mu(1) - 2*mu(2) + mu(3)) )
+
+end function get_lambda
+
+
+subroutine minimize_bigF(n, arr_a, arr_x, bigN, n0, eps)
+    integer n
+    integer bigN
+    real, dimension(0:n) ::arr_a, curr_a, prev_a
+    real, dimension(0:bigN) ::arr_x
+    real eps
+    real arr_v(0:n0)
+    prev_a = curr_a
+
+    call get_grad_bigF(n, arr_a, arr_x, bigN, arr_v)
+    
+    do while ()
+    
+    end do
+
+end subroutine minimize_bigF
 
 
 program main
@@ -69,175 +145,14 @@ program main
     integer, parameter ::n0 = 2
     integer, parameter ::bigN = 25
     integer, parameter ::m = 2
-    integer ::i
 
     real, parameter ::c = 0.1
     real, parameter ::d = 1.1
+    real, parameter ::eps = 10e-4 
     
     real ::arr_x(0:bigN)
     logical tess
     call get_arr_x(arr_x, c, d, bigN)
     
     tess = run_unit_tests()
-    ! do i = 0, bigN
-    !     print '(1x, F10.3)', arr_x(i)
-    ! end do
-    print *, tess
 end program main
-
-
-
-! ! tests.f90
-! module tests
-!     use assert_func
-
-!     private :: get_test_report
-!     private :: test_f_zero
-!     private :: test_f
-!     private :: test_get_x_from_interval
-!     private :: test_get_arr_x
-!     ! private :: test_p_n
-
-!     public :: run_unit_tests
-
-! contains
-!     subroutine get_test_report(result, name_of_test)
-!         logical result
-!         character(30) name_of_test
-
-!         if (result) then
-!             print *, name_of_test, ' passed'
-!         else
-!             print *, name_of_test, ' failed'
-!         end if 
-!     end subroutine get_test_report
-
-!     function test_f_zero()
-!         logical test_f_zero
-!         character(30) ::name_of_test = 'test_f_zero'
-
-!         test_f_zero = u_assert(f(1.0), 0.0)
-!         call get_test_report(test_f_zero, name_of_test)
-!     end function test_f_zero
-
-!     function test_f()
-!         logical test_f
-!         character(30) ::name_of_test = 'test_f'
-
-!         test_f = u_assert(f(2.0), (exp(2.0)-1)/(exp(2.0)+1) )
-!         call get_test_report(test_f, name_of_test)
-!     end function test_f
-
-!     function test_get_x_from_interval()
-!         logical test_get_x_from_interval
-!         character(30) ::name_of_test = 'test_get_x_from_interval'
-        
-!         test_get_x_from_interval = u_assert(get_x_from_interval(0.1, 1.1, 4, 2), 0.6)
-!         call get_test_report(test_get_x_from_interval, name_of_test)
-!     end function test_get_x_from_interval
-
-!     function test_get_arr_x()
-!         logical test_get_arr_x
-!         character(30) ::name_of_test = 'test_get_arr_x'
-!         real arr_x(1:5) /0.0, 0.0, 0.0, 0.0, 0.0/
-!         real answer(1:5) /0.1, 0.35, 0.6, 0.85, 1.1/
-
-!         test_get_arr_x = .TRUE.
-!         call get_arr_x(arr_x, 0.1, 1.1, 4)
-!         do i = 1, 4
-!             test_get_arr_x = u_assert(arr_x(i), answer(i)) .AND. test_get_arr_x
-!         end do
-!         call get_test_report(test_get_arr_x, name_of_test)
-!     end function test_get_arr_x
-
-!    ! function test_p_n()
-!    !     logical test_p_n
-!    !     character(30) ::name_of_test = 'test_p_n'
-
-!    ! end function test_p_n
-
-!     function run_unit_tests()
-!         logical run_unit_tests
-!         if (test_f_zero() &
-!                 .AND. test_f() &
-!                 .AND. test_get_x_from_interval() &
-!                 .AND. test_get_arr_x()) then
-!             run_unit_tests = .TRUE.
-!         else
-!             run_unit_tests = .FALSE.
-!             print *, 'Unit tests failed'
-!         end if
-!     end function run_unit_tests
-! end module tests
-
-! ! assertions.f90
-! module assert_func
-!     private
-!     interface u_assert
-!        module procedure u_assert_integer4, u_assert_integer8, u_assert_real4, u_assert_real8,  u_assert_logical
-!     end interface u_assert
-
-!     public :: u_assert
-
-! contains
-!     function u_assert_integer4(statement1, statement2)
-!         integer(KIND=4) statement1, statement2
-!         logical u_assert_integer4
-!         if (statement1 == statement2) then
-!             u_assert_integer4 = .TRUE.
-!         else 
-!             print *,'test fallen'
-!             print *, statement1, '!=', statement2 
-!             u_assert_integer4 = .FALSE.
-!         end if
-
-!     end function u_assert_integer4
-
-!     function u_assert_integer8(statement1, statement2)
-!         integer(KIND=8) statement1, statement2
-!         logical u_assert_integer8
-!         if (statement1 == statement2) then
-!             u_assert_integer8 = .TRUE.
-!         else 
-!             print *,'test fallen'
-!             print *, statement1, '!=', statement2 
-!             u_assert_integer8 = .FALSE.
-!         end if
-!     end function u_assert_integer8
-    
-!     function u_assert_real4(statement1, statement2)
-!         real(KIND=4) statement1, statement2
-!         logical u_assert_real4
-!         if (statement1 == statement2) then
-!             u_assert_real4 = .TRUE.
-!         else 
-!             print *,'test fallen'
-!             print *, statement1, '!=', statement2 
-!             u_assert_real4 = .FALSE.
-!         end if
-!     end function u_assert_real4
-
-!     function u_assert_real8(statement1, statement2)
-!         real(KIND=8) statement1, statement2
-!         logical u_assert_real8
-!         if (statement1 == statement2) then
-!             u_assert_real8 = .TRUE.
-!         else 
-!             print *,'test fallen'
-!             print *, statement1, '!=', statement2 
-!             u_assert_real8 = .FALSE.
-!         end if
-!     end function u_assert_real8
-    
-!     function u_assert_logical(statement1, statement2)
-!         logical statement1, statement2
-!         logical u_assert_logical
-!         if (statement1 .eqv. statement2) then
-!             u_assert_logical = .TRUE.
-!         else 
-!             print *,'test fallen'
-!             print *, statement1, '!=', statement2 
-!             u_assert_logical = .FALSE.
-!         end if
-!     end function u_assert_logical
-! end module assert_func
