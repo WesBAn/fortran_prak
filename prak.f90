@@ -122,21 +122,28 @@ function get_lambda(n, arr_a_k, arr_v, arr_x, bigN)
 end function get_lambda
 
 
-subroutine minimize_bigF(n, arr_a, arr_x, bigN, n0, eps)
+subroutine minimize_bigF(n, arr_a, arr_x, bigN, eps)
     integer n
     integer bigN
-    real, dimension(0:n) ::arr_a, curr_a, prev_a
+    integer ::step = 0
+    real, dimension(0:n) ::arr_a, curr_a, prev_a, arr_v
     real, dimension(0:bigN) ::arr_x
     real eps
-    real arr_v(0:n0)
-    prev_a = curr_a
+    real curr_lambda
+    real curr_beta
+    prev_a = arr_a
+    
+    do 
+        step = step + 1
+        call get_grad_bigF(n, prev_a, arr_x, bigN, arr_v)
+        curr_lambda = get_lambda(n, prev_a, arr_v, arr_x, bigN)
+        curr_a = prev_a + curr_lambda * arr_v
+        curr_beta = get_beta_k(n, curr_a, prev_a) 
 
-    call get_grad_bigF(n, arr_a, arr_x, bigN, arr_v)
-    
-    do while ()
-    
+        print '(1x A I10 A F8.4 A F8.4)', '(step)k=', step, 'beta=', curr_beta, 'g=', norm2(arr_v)
+        if (curr_beta < eps) exit
     end do
-
+    arr_a = curr_a
 end subroutine minimize_bigF
 
 
@@ -149,10 +156,17 @@ program main
     real, parameter ::c = 0.1
     real, parameter ::d = 1.1
     real, parameter ::eps = 10e-4 
-    
     real ::arr_x(0:bigN)
-    logical tess
+    real ::arr_a(0:m-1, 0:n0+m) = 0.0
+    integer i
+
+    logical tests_result
     call get_arr_x(arr_x, c, d, bigN)
     
-    tess = run_unit_tests()
+    tests_result = run_unit_tests()
+    if (tests_result) then
+        do i = 0, m-1
+            call minimize_bigF(n0+m-i, arr_a(i, :n0+m-i), arr_x, bigN,eps)
+        end do
+    end if
 end program main
