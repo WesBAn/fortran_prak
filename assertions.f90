@@ -35,7 +35,7 @@ contains
     function u_assert_real4(statement1, statement2)
         real(KIND=4) statement1, statement2
         logical u_assert_real4
-        if (statement1 == statement2) then
+        if (statement1 == statement2 .OR. abs(statement1-statement2)<0.0001) then
             u_assert_real4 = .TRUE.
         else 
             print *,'test fallen'
@@ -47,7 +47,7 @@ contains
     function u_assert_real8(statement1, statement2)
         real(KIND=8) statement1, statement2
         logical u_assert_real8
-        if (statement1 == statement2) then
+        if (statement1 == statement2 .OR. abs(statement1-statement2)<0.0001) then
             u_assert_real8 = .TRUE.
         else 
             print *,'test fallen'
