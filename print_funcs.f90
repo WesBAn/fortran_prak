@@ -11,12 +11,13 @@ module pfuncs
     public :: print_a_i
     public :: print_a_iteration_step
     public :: print_welcome_message
+    public :: print_graphic_urls
 
 contains
     subroutine print_n_size(i)
         integer i
         print *, ''
-        print *, '////////////////////////////////////////////////'
+        print *, '///////////////////////////////////////////////////////////////////////////////////'
         print main_divider_format, 'Многочлен p_', i, ' степени'
         print *, ''
     end subroutine print_n_size
@@ -34,7 +35,10 @@ contains
 
     subroutine print_sigma(sigma)
         real sigma
+        print *, ''
+        print *, '(3.2) Рассчёт среднеквадратического уклонения'
         print sigma_format, 'sigma = ', sigma
+        print *, ''
     end subroutine print_sigma
 
     subroutine print_a_i(i, a_i)
@@ -67,4 +71,12 @@ contains
         print *, " *                             * "
         print *, " *  *  *  *  *  *  *  *  *  *  * "
     end subroutine print_welcome_message
+
+    subroutine print_graphic_urls()
+        print *, ''
+        print *, '(5) Графики:'
+        print *, '3 степени: https://www.desmos.com/calculator/azh8znnpq3'
+        print *, '4 степени: https://www.desmos.com/calculator/eow8uajxft'
+    end subroutine print_graphic_urls
+
 end module pfuncs

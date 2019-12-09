@@ -150,7 +150,6 @@ subroutine minimize_bigF_and_get_arr_a(n, arr_a, arr_x, bigN, eps)
     prev_arr_v = 0.0
     prev_beta = 0.0
     print *, '(2) Процесс минимизации Ф(a)=Ф(a0,a1,a2,...,an)'
-    print *, ''
     do
         step = step + 1
         curr_bigF = get_bigF(n, curr_arr_a, arr_x, bigN)
@@ -205,10 +204,9 @@ program main
     call get_arr_x(arr_x, c, d, bigN)
     do i = 0, m-1
         call print_n_size(i+n0)
-
         n = n0 + i
         call minimize_bigF_and_get_arr_a(n, arr_a(m-1-i:n0+m-1), arr_x, bigN, eps)
-
+        print *, '(1 + 3.1) Сравнение y_i и p_n(x_i)'
         do j = 0, bigN
             curr_p_n = get_p_n(n, arr_a(m-1-i:n0+m), arr_x(j))
             delta_fx_pn = abs(f(arr_x(j))-curr_p_n)
@@ -217,8 +215,11 @@ program main
 
         sigma = get_sigma(n, arr_a(m-1-i:n0+m-1), arr_x, bigN)
         call print_sigma(sigma)
+        print *, '(4) Коэффициенты p_n'
         do j = m-1-i, n0+m-1
             call print_a_i(j-m+i+1, arr_a(j))
         end do
     end do
+
+    call print_graphic_urls()
 end program main
