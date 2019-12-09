@@ -13,10 +13,9 @@ module tests
     private :: test_get_bigF
     private :: test_get_lambda
     private :: test_get_grad_bigF
-    private :: test_get_avsqrt_dispersion
+    private :: test_get_sigma
     private :: test_get_delta_k
     private :: test_get_beta_k
-    private :: test_lsp
 
     public :: run_unit_tests
 contains
@@ -119,47 +118,62 @@ contains
     function test_get_lambda()
         logical test_get_lambda
         character(30), parameter ::name_of_test = 'test_get_lambda'
-        real, parameter ::arr_a(0:2) = (/-1.0, 0.0, 1.0/)
+        real, parameter ::arr_a(0:1) = (/1.0, -1.0/)
         real, parameter ::arr_x(0:1) = (/1.0, 2.0/)
+        real, parameter ::arr_v(0:1) = (/2.0, 3.0/)
 
-        !test_get_lambda = u_assert(get_lambda(2, arr))
+        test_get_lambda = u_assert(get_lambda(1, arr_a, arr_v, arr_x, 1), -0.02255)
         call get_test_report(test_get_lambda, name_of_test)
     end function test_get_lambda
 
     function test_get_grad_bigF()
         logical test_get_grad_bigF
         character(30), parameter ::name_of_test = 'test_get_grad_bigF'
+        real, parameter ::arr_a(0:1) = (/1.0, -1.0/)
+        real, parameter ::arr_x(0:1) = (/1.0, 2.0/)
+        real, parameter ::answer(0:1) = (/0.95364, 0.47682/)
+        real ::checking_answer(0:1)
+
+        test_get_grad_bigF = .TRUE.
+        call get_grad_bigF(1, arr_a, arr_x, 1, checking_answer)
         
+        do i = 0, 1
+            test_get_grad_bigF = u_assert(checking_answer(i), answer(i)) .AND. test_get_grad_bigF
+        end do
+
         call get_test_report(test_get_grad_bigF, name_of_test)
     end function test_get_grad_bigF
 
-    function test_get_avsqrt_dispersion()
-        logical test_get_avsqrt_dispersion
-        character(30), parameter ::name_of_test = 'test_get_avsqrt_dispersion'
+    function test_get_sigma()
+        logical test_get_sigma
+        character(30), parameter ::name_of_test = 'test_get_sigma'
+        real, parameter ::arr_a(0:2) = (/1.0, -2.0, 3.0/)
+        real, parameter ::arr_x(0:2) = (/1.0, 2.0, 3.0/)
         
-        call get_test_report(test_get_avsqrt_dispersion, name_of_test)
-    end function test_get_avsqrt_dispersion
+        test_get_sigma= u_assert(get_sigma(2, arr_a, arr_x, 2), 3.3848)
+        call get_test_report(test_get_sigma, name_of_test)
+    end function test_get_sigma
     
     function test_get_delta_k()
         logical test_get_delta_k
         character(30), parameter ::name_of_test = 'test_get_delta_k'
-        
-        call test_get_test_report(test_get_delta_k, name_of_test)
+        real, parameter ::arr_a_k(0:1) = (/2.0, -1.0/)
+        real, parameter ::arr_a_k_minus1(0:1) = (/1.0, 0.0/)
+
+        test_get_delta_k = u_assert(get_delta_k(1, arr_a_k, arr_a_k_minus1), 1.0)
+        call get_test_report(test_get_delta_k, name_of_test)
     end function test_get_delta_k
 
     function test_get_beta_k()
         logical test_get_beta_k
         character(30), parameter ::name_of_test = 'test_get_beta_k'
+        real, parameter ::arr_a_k(0:1) = (/1.0, 0.0/)
+        real, parameter ::arr_a_k_plus1(0:1) = (/2.0, -1.0/)
+        real, parameter ::arr_x(0:1) = (/1.0, 2.0/)
         
+        test_get_beta_k = u_assert(get_beta_k(1, arr_a_k, arr_a_k_plus1, arr_x, 1), 2.3675)
         call get_test_report(test_get_beta_k, name_of_test)
     end function test_get_beta_k
-
-    function test_lsp()
-        logical test_lsp
-        character(30), parameter ::name_of_test = 'test_lsp'
-        
-        call get_test_report(test_lsp, name_of_test)
-    end function test_lsp
 
     function run_unit_tests()
         logical run_unit_tests
@@ -172,15 +186,16 @@ contains
                 .AND. test_get_bigF() &
                 .AND. test_get_lambda() &
                 .AND. test_get_grad_bigF() &
-                .AND. test_get_avsqrt_dispersion() &
+                .AND. test_get_sigma() &
                 .AND. test_get_delta_k() &
-                .AND. test_get_beta_k() &
-                .AND. test_lsp()) then
+                .AND. test_get_beta_k()) then
+
             run_unit_tests = .TRUE.
             print *, 'Unit tests passed'
         else
             run_unit_tests = .FALSE.
             print *, 'Unit tests failed'
         end if
+        print *, ''
     end function run_unit_tests
 end module tests

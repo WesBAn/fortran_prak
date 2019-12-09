@@ -4,12 +4,12 @@
 function f(x) 
     real x
     real f
-    f = tanh(x-1) 
+    f = tanh(x-1)
 end function f
 
 
 function get_x_from_interval(c, d, bigN, stepNumber)
-    real c       
+    real c
     real d
     integer bigN
     integer stepNumber
@@ -42,7 +42,7 @@ function get_p_n(n, arr_a, x)
 end function get_p_n
 
 
-function get_bigF(n, arr_a, arr_x, bigN)   
+function get_bigF(n, arr_a, arr_x, bigN)
     use utils 
     integer n
     integer bigN
@@ -51,7 +51,7 @@ function get_bigF(n, arr_a, arr_x, bigN)
     real get_bigF
     integer i
 
-    get_bigF = 0.0  
+    get_bigF = 0.0
     do i = 0, bigN
         get_bigF = get_bigF + (f(arr_x(i)) - get_p_n(n, arr_a, arr_x(i)))**2
     end do
@@ -67,21 +67,21 @@ subroutine get_grad_bigF(n, arr_a, arr_x, bigN, arr_grad)
     
     do i = 0, n
         arr_grad(i) = 0
-        do j = 0, N
-            arr_grad(i) = arr_grad(i) + 2 * (arr_x(j) ** (n-i)) * ( get_p_n(n, arr_a, arr_x(j)) - f(arr_x(j)) )
+        do j = 0, bigN
+            arr_grad(i) = arr_grad(i) + 2.0 * (arr_x(j) ** (n-i)) * ( get_p_n(n, arr_a, arr_x(j)) - f(arr_x(j)) )
         end do
     end do
 end subroutine get_grad_bigF
 
 
-function get_avsqrt_dispersion(n, arr_a, arr_x, bigN)
+function get_sigma(n, arr_a, arr_x, bigN)
     integer n
     integer bigN
     real arr_a(0:n)
     real arr_x(0:bigN)
-    real get_avsqrt_dispersion
-    get_avsqrt_dispersion = sqrt(get_bigF(n, arr_a, arr_x, bigN) / (bigN+1))
-end function get_avsqrt_dispersion
+    real get_sigma
+    get_sigma = sqrt(get_bigF(n, arr_a, arr_x, bigN) / (bigN+1))
+end function get_sigma
 
 
 function get_delta_k(n, arr_a_k, arr_a_k_minus1) 
@@ -102,12 +102,12 @@ function get_beta_k(n, arr_a_k, arr_a_k_plus1, arr_x, bigN)
     real, dimension(0:n) ::arr_a_k, arr_a_k_plus1
     real, dimension(0:n) ::grad_a_k, grad_a_k_plus1
     real get_beta_k
+
     
     call get_grad_bigF(n, arr_a_k, arr_x, bigN, grad_a_k)
     call get_grad_bigF(n, arr_a_k_plus1, arr_x, bigN, grad_a_k_plus1)
 
     get_beta_k = (norm2(grad_a_k_plus1)**2) / (norm2(grad_a_k)**2) 
-
 end function get_beta_k
 
 
@@ -128,49 +128,63 @@ function get_lambda(n, arr_a_k, arr_v, arr_x, bigN)
 end function get_lambda
 
 
-subroutine lsp(n, arr_a, arr_x, bigN, eps)
+subroutine minimize_bigF_and_get_arr_a(n, arr_a, arr_x, bigN, eps)
+    use pfuncs
     integer n
     integer bigN
     integer step
     real eps
-    real, dimension(0:n) ::arr_a, curr_arr_a, prev_arr_a, pprev_arr_a
-    real, dimension(0:n) ::curr_arr_v
-    real, dimension(0:n) ::prev_arr_v(0:n)
+    real, dimension(0:n) ::arr_a, curr_arr_a, prev_arr_a, new_current_arr_a
+    real, dimension(0:n) ::curr_arr_v, prev_arr_v
     real, dimension(0:bigN) ::arr_x
 
     real curr_lambda
-    real ::curr_beta = 0
+    real prev_beta
     real g
+    real curr_bigF
+    real curr_grad(0:n)
 
+    curr_arr_a = arr_a
     step = -1
+    prev_arr_a = 0.0
     prev_arr_v = 0.0
-    prev_arr_a = arr_a
-    pprev_arr_a = 0.0
-    do 
+    prev_beta = 0.0
+    print *, '(2) Процесс минимизации Ф(a)=Ф(a0,a1,a2,...,an)'
+    print *, ''
+    do
         step = step + 1
-        call get_grad_bigF(n, prev_arr_a, arr_x, bigN, curr_arr_v)
-        g = norm2(curr_arr_v)        
-        curr_arr_v = -1*curr_arr_v + curr_beta * prev_arr_v
-        ! arr_v = arr_v + curr_beta * 
-        
-        curr_lambda = get_lambda(n, prev_arr_a, curr_arr_v, arr_x, bigN)
-        curr_arr_a = prev_arr_a + curr_lambda * curr_arr_v
-        curr_delta = get_delta_k(n, curr_arr_a, prev_arr_a)
-        print '(1x A I2 A F8.4 A F8.4)', '(step)k=', step, ' delta=', curr_delta, ' g=', g
+        curr_bigF = get_bigF(n, curr_arr_a, arr_x, bigN)
+        call get_grad_bigF(n, curr_arr_a, arr_x, bigN, curr_grad)
+        g = norm2(curr_grad)
 
-        pprev_arr_a = prev_arr_a
+        if (step > 0) then
+           prev_beta = get_beta_k(n, prev_arr_a, curr_arr_a, arr_x, bigN)
+        end if
+
+        curr_arr_v = -1.0*curr_grad + prev_beta*prev_arr_v
+        curr_lambda = get_lambda(n, curr_arr_a, curr_arr_v, arr_x, bigN)
+
+        new_current_arr_a = curr_arr_a + curr_lambda*curr_arr_v
+
+        curr_delta = get_delta_k(n, new_current_arr_a, curr_arr_a)
+        call print_a_iteration_step(step, curr_delta, g, curr_bigF)
+        
         prev_arr_a = curr_arr_a
+        curr_arr_a = new_current_arr_a
         prev_arr_v = curr_arr_v
-        curr_beta = get_beta_k(n, pprev_arr_a, prev_arr_a, arr_x, bigN)
 
         if (curr_delta < eps) exit
     end do
-    arr_a = curr_arr_a
-end subroutine lsp
+
+    print *, ''
+    arr_a = new_current_arr_a
+end subroutine minimize_bigF_and_get_arr_a
 
 
 program main
     use tests
+    use pfuncs
+
     integer, parameter ::n0 = 2
     integer, parameter ::bigN = 25
     integer, parameter ::m = 2
@@ -180,33 +194,31 @@ program main
     real, parameter ::d = 1.1
     real, parameter ::eps = 10e-5 
     real ::arr_x(0:bigN)
-    real ::arr_a(0:n0+m) = 0.0 
-    real ::curr_p_n
+    real ::arr_a(0:n0+m-1) = 0.0 
+    real curr_p_n, sigma
+    real delta_fx_pn
     integer i, j
-
     logical tests_result
-    call get_arr_x(arr_x, c, d, bigN)
-    
+
     tests_result = run_unit_tests()
-    if (tests_result) then
-        do i = 0, m
-            print *, ''
-            print '(1x A I1 A)', '/////', i, '/////'
-            print *, ''
-            n = n0 + m - i
-            call lsp(n, arr_a(m-i:n0+m), arr_x, bigN, eps)
-            do j = 0, bigN
-                curr_p_n = get_p_n(n, arr_a(m-i:n0+m), arr_x(j))
-                print '(1x A I2 A F7.4 A F7.4 A F7.4 A F7.4)', 'j=', j, &
-                                                               ' x=', arr_x(j), &
-                                                               ' f(x)=', f(arr_x(j)), &
-                                                               ' p_n(x)=', curr_p_n, &
-                                                               ' |f(x)-p_n(x)|=', abs(f(arr_x(j))-curr_p_n)
-            end do
-            print '(1x A F7.4)', 'sigma=', get_avsqrt_dispersion(n, arr_a(m-i:n0+m), arr_x, bigN)
-            do j = m-i, n0+m
-                print '(1x A1 I2 A F9.4)', 'a', j-m+i, '=', arr_a(j)
-            end do
+    call print_welcome_message
+    call get_arr_x(arr_x, c, d, bigN)
+    do i = 0, m-1
+        call print_n_size(i+n0)
+
+        n = n0 + i
+        call minimize_bigF_and_get_arr_a(n, arr_a(m-1-i:n0+m-1), arr_x, bigN, eps)
+
+        do j = 0, bigN
+            curr_p_n = get_p_n(n, arr_a(m-1-i:n0+m), arr_x(j))
+            delta_fx_pn = abs(f(arr_x(j))-curr_p_n)
+            call print_fx_pn(j, arr_x(j), f(arr_x(j)), curr_p_n, delta_fx_pn)
         end do
-    end if
+
+        sigma = get_sigma(n, arr_a(m-1-i:n0+m-1), arr_x, bigN)
+        call print_sigma(sigma)
+        do j = m-1-i, n0+m-1
+            call print_a_i(j-m+i+1, arr_a(j))
+        end do
+    end do
 end program main
