@@ -4,6 +4,7 @@
 function f(x) 
     real x
     real f
+    ! f = (x-0.5)*(x-0.3)
     f = tanh(x-1)
 end function f
 
